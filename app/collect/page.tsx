@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getLorcastListings } from "../lib/lorcast";
-import { getCollectibles } from "../lib/collect";
+import { getCollectibles, getEventCards } from "../lib/collect";
 import CollectCard from "../components/collect/CollectCard";
 import Footer from "../components/Footer";
 import { LiveBadge } from "../components/Section";
@@ -18,6 +18,7 @@ export const revalidate = 300;
 export default async function CollectPage() {
   const listings = await getLorcastListings();
   const picks = getCollectibles(listings, 12);
+  const events = getEventCards(listings, 12);
 
   return (
     <>
@@ -49,7 +50,7 @@ export default async function CollectPage() {
           </p>
         </header>
 
-        {picks.length === 0 ? (
+        {picks.length === 0 && events.length === 0 ? (
           <div className="mt-8 grid place-items-center rounded-2xl border border-dashed border-line bg-surface/40 py-20 text-center">
             <p className="text-base font-semibold">No collectibles to show right now</p>
             <p className="mt-1 max-w-sm text-sm text-muted">
@@ -64,15 +65,37 @@ export default async function CollectPage() {
           </div>
         ) : (
           <>
-            <p className="mt-6 mb-4 text-sm text-muted">
-              <span className="font-mono font-semibold text-ink">{picks.length}</span>{" "}
-              chase cards · highest market value first
-            </p>
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {picks.map((c) => (
-                <CollectCard key={c.id} c={c} />
-              ))}
-            </div>
+            {picks.length > 0 && (
+            <section className="mt-8">
+              <h2 className="text-lg font-bold">Box chase cards</h2>
+              <p className="mt-1 mb-4 text-sm text-muted">
+                Pull-from-a-pack rarities ·{" "}
+                <span className="font-mono font-semibold text-ink">{picks.length}</span>{" "}
+                cards, highest market value first
+              </p>
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {picks.map((c) => (
+                  <CollectCard key={c.id} c={c} />
+                ))}
+              </div>
+            </section>
+            )}
+
+            {events.length > 0 && (
+              <section className="mt-12">
+                <h2 className="text-lg font-bold">Event &amp; tournament exclusives</h2>
+                <p className="mt-1 mb-4 text-sm text-muted">
+                  Not box-pullable — championship, convention &amp; promo-set cards ·{" "}
+                  <span className="font-mono font-semibold text-ink">{events.length}</span>{" "}
+                  cards
+                </p>
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {events.map((c) => (
+                    <CollectCard key={c.id} c={c} />
+                  ))}
+                </div>
+              </section>
+            )}
           </>
         )}
       </div>

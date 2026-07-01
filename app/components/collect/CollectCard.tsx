@@ -54,12 +54,24 @@ export default function CollectCard({ c }: { c: Collectible }) {
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <span
-            className="inline-flex w-fit items-center rounded-full px-2 py-0.5 text-[0.58rem] font-bold uppercase tracking-wide"
-            style={{ background: `color-mix(in oklch, var(--rar) 16%, transparent)`, color: `var(--rar)` }}
-          >
-            {c.rarityLabel}
-          </span>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span
+              className="inline-flex items-center rounded-full px-2 py-0.5 text-[0.58rem] font-bold uppercase tracking-wide"
+              style={{ background: `color-mix(in oklch, var(--rar) 16%, transparent)`, color: `var(--rar)` }}
+            >
+              {c.rarityLabel}
+            </span>
+            <span
+              className={`inline-flex items-center rounded-full px-2 py-0.5 text-[0.58rem] font-bold uppercase tracking-wide ${
+                c.origin.kind === "event"
+                  ? "bg-accent/15 text-accent"
+                  : "border border-line text-muted"
+              }`}
+            >
+              {c.origin.kind === "event" ? "★ " : ""}
+              {c.origin.label}
+            </span>
+          </div>
           <h3 className="mt-1.5 line-clamp-2 text-[1.05rem] font-extrabold leading-tight">
             {c.name}
           </h3>
