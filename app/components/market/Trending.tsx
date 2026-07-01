@@ -5,12 +5,20 @@ import { LiveBadge } from "../Section";
 import { IconArrowR } from "../Icons";
 
 /**
- * Home teaser for the spotlight. Shows the top few signal-flagged cards
- * statically (no marquee — easier to read) and links to the full page.
+ * Home teaser for the spotlight. Auto-runs the signal-flagged cards as a
+ * horizontal marquee (pauses on hover) and links to the full page.
  */
 export default function Trending({ recs, windowDays }: { recs: Rec[]; windowDays: number }) {
   if (recs.length === 0) return null;
-  const top = recs.slice(0, 3);
+
+  // enough cards for a full-width loop, then duplicate the set so the
+  // translateX(-50%) marquee wraps seamlessly
+  const base =
+    recs.length >= 6
+      ? recs
+      : Array.from({ length: Math.ceil(6 / recs.length) }, () => recs).flat();
+  const track = [...base, ...base];
+  const durSec = Math.max(28, base.length * 6);
 
   return (
     <section className="overflow-hidden rounded-[22px] border border-primary/25 bg-[radial-gradient(120%_140%_at_0%_0%,color-mix(in_oklch,var(--color-primary)_10%,transparent),transparent_55%)] p-5 sm:p-6">
@@ -34,10 +42,21 @@ export default function Trending({ recs, windowDays }: { recs: Rec[]; windowDays
         <span className="text-faint">Information only · not investment advice.</span>
       </p>
 
-      <div className="mt-5 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
-        {top.map((m) => (
-          <RecCard key={m.id} m={m} windowDays={windowDays} />
-        ))}
+      <div
+        className="marquee mt-5 [--marquee-dur:var(--dur)]"
+        style={{ ["--dur" as string]: `${durSec}s` }}
+      >
+        <ul className="marquee-track gap-3.5">
+          {track.map((m, i) => (
+            <li
+              key={`${m.id}-${i}`}
+              className="w-[320px] shrink-0"
+              aria-hidden={i >= base.length}
+            >
+              <RecCard m={m} windowDays={windowDays} />
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   );
