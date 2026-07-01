@@ -7,6 +7,7 @@ import {
   IconTrophy,
   IconRaffle,
   IconBolt,
+  IconSpark,
 } from "./Icons";
 import type { AnchorHTMLAttributes, SVGProps } from "react";
 
@@ -43,6 +44,7 @@ export const primaryNav: NavItem[] = [
   { label: "Just Pulled", href: "/packs", icon: IconCoin, badge: "LIVE" },
   { label: "Lorcana Market", href: "/market/lorcana", icon: IconStore },
   { label: "Spotlight", href: "/spotlight", icon: IconBolt, badge: "NEW" },
+  { label: "Collect", href: "/collect", icon: IconSpark, badge: "NEW" },
   { label: "Leaderboard", href: "#", icon: IconTrophy },
 ];
 
