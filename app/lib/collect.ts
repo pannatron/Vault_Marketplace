@@ -176,3 +176,67 @@ export function getCollectibles(listings: Listing[], limit = 12): Collectible[] 
 export function getEventCards(listings: Listing[], limit = 12): Collectible[] {
   return pick(listings, (l) => isEventSet(l.setCode), limit);
 }
+
+/* ------------------------------------------------------------------ *
+ * Grouped view — the page is organised into categories rather than one
+ * flat pile: box cards by rarity, event cards by the event they came from.
+ * ------------------------------------------------------------------ */
+
+export interface CollectGroup {
+  /** stable key for filtering */
+  key: string;
+  label: string;
+  kind: "box" | "event";
+  /** one-line description of the category */
+  blurb: string;
+  cards: Collectible[];
+}
+
+/** box rarities, chase-first */
+const BOX_GROUPS: { label: string; blurb: string }[] = [
+  { label: "Enchanted", blurb: "Borderless full-art — the trophy pull of each set." },
+  { label: "Iconic", blurb: "The newest ultra-rare tier, extremely limited." },
+  { label: "Legendary", blurb: "Top standard rarity — marquee characters." },
+  { label: "Super Rare", blurb: "Scarce but attainable, a rung below the chase." },
+  { label: "Epic", blurb: "High-rarity cards a step below the alt-arts." },
+];
+
+/** event categories, in a sensible reading order */
+const EVENT_GROUPS: { label: string; blurb: string }[] = [
+  { label: "Challenge Promo", blurb: "Store & Set Championship prize cards." },
+  { label: "Lorcana Challenge", blurb: "Awarded at official Challenge tournaments." },
+  { label: "D23 Expo", blurb: "Disney D23 convention exclusives." },
+  { label: "EPCOT Festival", blurb: "Disney parks EPCOT event exclusives." },
+  { label: "Promo Set", blurb: "League kits, prereleases & box toppers." },
+];
+
+const groupKey = (label: string) => label.toLowerCase().replace(/\s+/g, "-");
+
+/**
+ * Build the categorised sections for the collect page. Each card lands in
+ * exactly one group; empty groups are dropped. Per-group cap keeps any one
+ * category from dominating.
+ */
+export function getCollectSections(
+  listings: Listing[],
+  perGroup = 8
+): CollectGroup[] {
+  const box = getCollectibles(listings, 500);
+  const events = getEventCards(listings, 500);
+
+  const groups: CollectGroup[] = [];
+
+  for (const g of BOX_GROUPS) {
+    const cards = box.filter((c) => c.rarityLabel === g.label).slice(0, perGroup);
+    if (cards.length) {
+      groups.push({ key: groupKey(g.label), label: g.label, kind: "box", blurb: g.blurb, cards });
+    }
+  }
+  for (const g of EVENT_GROUPS) {
+    const cards = events.filter((c) => c.origin.label === g.label).slice(0, perGroup);
+    if (cards.length) {
+      groups.push({ key: groupKey(g.label), label: g.label, kind: "event", blurb: g.blurb, cards });
+    }
+  }
+  return groups;
+}
