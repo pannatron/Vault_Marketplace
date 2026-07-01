@@ -118,6 +118,8 @@ export interface Listing {
   feedback?: number;
   /** detail-route slug = `${setCode}-${number}` (Lorcast cards) */
   slug?: string;
+  /** set code (e.g. "4", "P2", "cp", "D23") — classifies how a card is obtained */
+  setCode?: string;
   /** TCGplayer product id — joins to real price history */
   tcgplayerId?: number;
   /** source page for the displayed market price (TCGplayer product) */

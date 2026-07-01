@@ -93,6 +93,18 @@ const KEEP_RARITIES = new Set([
 ]);
 
 /**
+ * Event / organized-play / convention sets — cards you can't pull from a
+ * booster box. Kept regardless of the premium-rarity allowlist so tournament
+ * and event exclusives (many are just "Promo" rarity, some are Rare) still
+ * surface. Codes are lower-cased for comparison.
+ */
+export const EVENT_SET_CODES = new Set(["p1", "p2", "p3", "cp", "c2", "d23", "dis"]);
+
+export function isEventSet(code?: string): boolean {
+  return !!code && EVENT_SET_CODES.has(code.toLowerCase());
+}
+
+/**
  * Premium tiers share a card name across prints (an Enchanted "Elsa" sits
  * alongside the Legendary "Elsa"; many names repeat across sets). A bare name
  * search returns the wrong / cheaper print, so tag the rarity into the query.
@@ -162,6 +174,7 @@ function toListing(c: LorcastCard): Listing | null {
   return {
     id: c.id,
     slug: slugOf(c),
+    setCode: c.set?.code,
     title,
     set: c.set?.name,
     price,
@@ -203,6 +216,11 @@ export async function getLorcastListings(): Promise<Listing[]> {
     "rarity:Iconic",
     "rarity:Epic",
     "rarity:Promo",
+    // event / organized-play / convention exclusives (not box-pullable)
+    "set:cp",
+    "set:C2",
+    "set:D23",
+    "set:DIS",
   ];
   const batches = await Promise.all(queries.map((q) => search(q).catch(() => [])));
 
@@ -211,8 +229,11 @@ export async function getLorcastListings(): Promise<Listing[]> {
   for (const card of batches.flat()) {
     if (seen.has(card.id)) continue;
     seen.add(card.id);
-    // drop anything outside the premium allowlist that slips through
-    if (!KEEP_RARITIES.has((card.rarity ?? "").toLowerCase())) continue;
+    // keep premium rarities, plus anything from an event set regardless of tier
+    const keep =
+      KEEP_RARITIES.has((card.rarity ?? "").toLowerCase()) ||
+      isEventSet(card.set?.code);
+    if (!keep) continue;
     const l = toListing(card);
     if (l) listings.push(l);
   }
