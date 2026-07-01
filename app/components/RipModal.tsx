@@ -59,18 +59,16 @@ export default function RipModal({
     const card = ripPack(pack);
     pending.current = card;
     settled.current = false;
-
-    const reduced =
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-    if (reduced) {
-      finish();
-    } else {
-      setPhase("ripping");
-      timer.current = setTimeout(finish, RIP_FALLBACK_MS);
-    }
+    // always enter the ripping phase so the pack-opening video plays; the
+    // video's `ended` event (or the fallback timer) drives the reveal
+    setPhase("ripping");
+    timer.current = setTimeout(finish, RIP_FALLBACK_MS);
   };
+
+  // ripping plays fullscreen — its own top-level layer, not inside the modal box
+  if (phase === "ripping") {
+    return <Ripping onDone={finish} onClose={onClose} />;
+  }
 
   return (
     <div
@@ -93,7 +91,6 @@ export default function RipModal({
         </button>
 
         {phase === "inside" && <Inside pack={pack} onRip={rip} />}
-        {phase === "ripping" && <Ripping onDone={finish} />}
         {phase === "result" && result && (
           <Result
             card={result}
@@ -214,26 +211,60 @@ function Inside({ pack, onRip }: { pack: Pack; onRip: () => void }) {
 
 /* ---------- ripping suspense ---------- */
 
-function Ripping({ onDone }: { onDone: () => void }) {
+function Ripping({ onDone, onClose }: { onDone: () => void; onClose: () => void }) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const fallback = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    // some browsers ignore the autoplay attribute; kick playback explicitly
+    const p = v.play();
+    if (p && typeof p.catch === "function") {
+      // autoplay blocked → reveal after a short beat instead of hanging
+      p.catch(() => {
+        fallback.current = setTimeout(onDone, 1600);
+      });
+    }
+    return () => clearTimeout(fallback.current ?? undefined);
+  }, [onDone]);
+
   return (
-    <div className="relative grid place-items-center bg-black">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Ripping pack"
+      className="fixed inset-0 z-[120] grid place-items-center bg-black"
+    >
       <video
+        ref={videoRef}
         src="/pack-opening.mp4"
         autoPlay
         muted
         playsInline
         preload="auto"
         onEnded={onDone}
-        onError={onDone}
-        className="aspect-video w-full object-cover"
+        onError={() => {
+          fallback.current = setTimeout(onDone, 1200);
+        }}
+        className="h-full w-full object-cover"
       />
-      <div className="pointer-events-none absolute inset-x-0 bottom-4 flex flex-col items-center gap-3">
+
+      <button
+        onClick={onClose}
+        aria-label="Close"
+        className="absolute right-4 top-4 z-10 grid h-10 w-10 place-items-center rounded-full border border-white/25 bg-black/40 text-white/85 backdrop-blur transition-colors hover:text-white"
+      >
+        <IconClose width={18} height={18} />
+      </button>
+
+      <div className="pointer-events-none absolute inset-x-0 bottom-8 flex flex-col items-center gap-4">
         <p className="font-mono text-sm font-semibold uppercase tracking-[0.2em] text-white/90 drop-shadow">
           Ripping…
         </p>
         <button
           onClick={onDone}
-          className="pointer-events-auto rounded-full border border-white/30 bg-black/40 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-white/90 backdrop-blur transition-colors hover:bg-black/60"
+          className="pointer-events-auto rounded-full border border-white/30 bg-black/40 px-5 py-2 text-xs font-bold uppercase tracking-[0.14em] text-white/90 backdrop-blur transition-colors hover:bg-black/60"
         >
           Skip
         </button>
