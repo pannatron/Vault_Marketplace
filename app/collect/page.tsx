@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getLorcastListings } from "../lib/lorcast";
-import { getCollectibles, getEventCards } from "../lib/collect";
-import CollectCard from "../components/collect/CollectCard";
+import { getCollectSections } from "../lib/collect";
+import CollectExplorer from "../components/collect/CollectExplorer";
 import Footer from "../components/Footer";
 import { LiveBadge } from "../components/Section";
 import { IconChevronL } from "../components/Icons";
@@ -10,15 +10,14 @@ import { IconChevronL } from "../components/Icons";
 export const metadata: Metadata = {
   title: "Collector's Spotlight — cards worth collecting | Card Mania",
   description:
-    "The chase cards of Disney Lorcana — what each one is, how you get a copy, and how it maps to competitive play, with live market prices. Information only, not investment advice.",
+    "The chase cards of Disney Lorcana, sorted by rarity and by the event they came from — what each one is, how you get a copy, and how it maps to competitive play, with live market prices. Information only, not investment advice.",
 };
 
 export const revalidate = 300;
 
 export default async function CollectPage() {
   const listings = await getLorcastListings();
-  const picks = getCollectibles(listings, 12);
-  const events = getEventCards(listings, 12);
+  const sections = getCollectSections(listings);
 
   return (
     <>
@@ -40,9 +39,10 @@ export default async function CollectPage() {
             <LiveBadge />
           </div>
           <p className="mt-3 max-w-2xl text-base leading-relaxed text-muted">
-            The chase cards of Disney Lorcana — the scarce, most-wanted prints. For
-            each one: what makes it special, how a copy actually gets into your
-            hands, and how it maps to competitive play. Ranked by market value.
+            The chase cards of Disney Lorcana, split by where they come from —
+            booster-box rarities and the event exclusives you can&apos;t pull from a
+            pack. For each: what makes it special, how a copy actually reaches you,
+            and how it maps to competitive play.
           </p>
           <p className="mt-2 text-[0.78rem] text-faint">
             Information only · not investment advice. Prices are live eBay /
@@ -50,7 +50,7 @@ export default async function CollectPage() {
           </p>
         </header>
 
-        {picks.length === 0 && events.length === 0 ? (
+        {sections.length === 0 ? (
           <div className="mt-8 grid place-items-center rounded-2xl border border-dashed border-line bg-surface/40 py-20 text-center">
             <p className="text-base font-semibold">No collectibles to show right now</p>
             <p className="mt-1 max-w-sm text-sm text-muted">
@@ -64,39 +64,9 @@ export default async function CollectPage() {
             </Link>
           </div>
         ) : (
-          <>
-            {picks.length > 0 && (
-            <section className="mt-8">
-              <h2 className="text-lg font-bold">Box chase cards</h2>
-              <p className="mt-1 mb-4 text-sm text-muted">
-                Pull-from-a-pack rarities ·{" "}
-                <span className="font-mono font-semibold text-ink">{picks.length}</span>{" "}
-                cards, highest market value first
-              </p>
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {picks.map((c) => (
-                  <CollectCard key={c.id} c={c} />
-                ))}
-              </div>
-            </section>
-            )}
-
-            {events.length > 0 && (
-              <section className="mt-12">
-                <h2 className="text-lg font-bold">Event &amp; tournament exclusives</h2>
-                <p className="mt-1 mb-4 text-sm text-muted">
-                  Not box-pullable — championship, convention &amp; promo-set cards ·{" "}
-                  <span className="font-mono font-semibold text-ink">{events.length}</span>{" "}
-                  cards
-                </p>
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                  {events.map((c) => (
-                    <CollectCard key={c.id} c={c} />
-                  ))}
-                </div>
-              </section>
-            )}
-          </>
+          <div className="mt-6">
+            <CollectExplorer sections={sections} />
+          </div>
         )}
       </div>
 
