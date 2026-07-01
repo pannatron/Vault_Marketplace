@@ -1,0 +1,340 @@
+@import "tailwindcss";
+
+/* ============================================================
+   Card Mania — design tokens
+   Dark, committed neon-on-ink. Foil glows; chrome stays quiet.
+   ============================================================ */
+
+@theme {
+  /* Surfaces */
+  --color-bg: oklch(0.17 0.015 255);
+  --color-surface: oklch(0.215 0.016 255);
+  --color-surface-2: oklch(0.255 0.018 255);
+  --color-rail: oklch(0.15 0.014 258);
+  --color-line: oklch(0.32 0.02 258);
+  --color-line-soft: oklch(0.26 0.018 258);
+
+  /* Ink */
+  --color-ink: oklch(0.97 0.005 250);
+  --color-muted: oklch(0.745 0.012 258);
+  --color-faint: oklch(0.6 0.012 258);
+
+  /* Brand */
+  --color-primary: oklch(0.74 0.14 195);
+  --color-primary-strong: oklch(0.68 0.15 195);
+  --color-primary-ink: oklch(0.17 0.03 200);
+  --color-accent: oklch(0.7 0.2 350);
+  --color-gold: oklch(0.82 0.13 85);
+  --color-success: oklch(0.8 0.17 155);
+
+  /* Rarity ramp */
+  --color-r-common: oklch(0.62 0.02 258);
+  --color-r-uncommon: oklch(0.74 0.14 195);
+  --color-r-rare: oklch(0.66 0.16 250);
+  --color-r-epic: oklch(0.64 0.2 300);
+  --color-r-legendary: oklch(0.82 0.13 85);
+  --color-r-enchanted: oklch(0.72 0.21 340);
+  --color-r-iconic: oklch(0.7 0.18 265);
+
+  /* Type */
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+
+  /* Radii */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 26px;
+
+  /* Semantic z-scale */
+  --z-rail: 30;
+  --z-sticky: 40;
+  --z-drawer-backdrop: 60;
+  --z-drawer: 70;
+  --z-toast: 90;
+
+  /* Easing */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-line);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scrollbar-color: var(--color-line) transparent;
+  }
+
+  body {
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  ::selection {
+    background: color-mix(in oklch, var(--color-primary) 35%, transparent);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Thin custom scrollbar only on the scroll rows (not a global reinvent) */
+  .scrollrow {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line) transparent;
+  }
+  .scrollrow::-webkit-scrollbar { height: 6px; }
+  .scrollrow::-webkit-scrollbar-thumb {
+    background: var(--color-line);
+    border-radius: 999px;
+  }
+  .no-scrollbar { scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+}
+
+/* ============================================================
+   Holographic card art — CSS only, keyed by rarity via vars
+   ============================================================ */
+@layer components {
+  .holo {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background:
+      radial-gradient(120% 80% at 50% 0%, color-mix(in oklch, var(--rar, var(--color-r-common)) 30%, transparent), transparent 60%),
+      linear-gradient(160deg,
+        color-mix(in oklch, var(--rar, var(--color-r-common)) 22%, var(--color-surface)),
+        var(--color-surface) 55%,
+        color-mix(in oklch, var(--rar, var(--color-r-common)) 16%, var(--color-surface)));
+  }
+
+  /* iridescent foil sweep — only present on rare+ via .holo--foil */
+  .holo--foil::before {
+    content: "";
+    position: absolute;
+    inset: -40%;
+    z-index: -1;
+    background: conic-gradient(
+      from 0deg,
+      oklch(0.7 0.18 195 / 0.0),
+      oklch(0.72 0.2 300 / 0.32),
+      oklch(0.78 0.2 350 / 0.28),
+      oklch(0.82 0.16 85 / 0.26),
+      oklch(0.74 0.18 195 / 0.3),
+      oklch(0.7 0.18 195 / 0.0)
+    );
+    filter: blur(14px);
+    animation: holo-spin 9s linear infinite;
+  }
+
+  .holo--foil::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(
+      115deg,
+      transparent 30%,
+      color-mix(in oklch, white 40%, transparent) 46%,
+      color-mix(in oklch, white 55%, transparent) 50%,
+      color-mix(in oklch, white 40%, transparent) 54%,
+      transparent 70%
+    );
+    background-size: 280% 280%;
+    mix-blend-mode: overlay;
+    animation: holo-shimmer 6.5s var(--ease-out-quart) infinite;
+  }
+
+  /* foil grain crosshatch for texture */
+  .holo--lines {
+    background-image: repeating-linear-gradient(
+      115deg,
+      color-mix(in oklch, var(--rar) 10%, transparent) 0 2px,
+      transparent 2px 7px
+    );
+  }
+
+  .glow-rar {
+    box-shadow:
+      0 0 0 1px color-mix(in oklch, var(--rar, var(--color-line)) 50%, transparent),
+      0 10px 30px -12px color-mix(in oklch, var(--rar, black) 55%, transparent);
+  }
+}
+
+/* ============================================================
+   Utilities
+   ============================================================ */
+@layer utilities {
+  .live-dot {
+    position: relative;
+  }
+  .live-dot::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--color-accent);
+    animation: live-ping 1.8s var(--ease-out-quart) infinite;
+  }
+
+  .hover-lift {
+    transition: transform 0.16s var(--ease-out-quart),
+      box-shadow 0.16s var(--ease-out-quart),
+      border-color 0.16s var(--ease-out-quart);
+  }
+  .hover-lift:hover {
+    transform: translateY(-3px);
+  }
+
+  .gridfade-r {
+    -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent);
+    mask-image: linear-gradient(90deg, #000 88%, transparent);
+  }
+}
+
+/* ============================================================
+   Keyframes
+   ============================================================ */
+@keyframes holo-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes holo-shimmer {
+  0%, 100% { background-position: 160% 0; opacity: 0.55; }
+  50% { background-position: -60% 0; opacity: 0.85; }
+}
+@keyframes live-ping {
+  0% { transform: scale(1); opacity: 0.7; }
+  70%, 100% { transform: scale(2.4); opacity: 0; }
+}
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-14px) scale(0.96); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-in-left { animation: slide-in-left 0.32s var(--ease-out-expo) both; }
+.animate-rise-in { animation: rise-in 0.4s var(--ease-out-expo) both; }
+
+/* auto-running marquee row — pause on hover, scrollable if reduced motion */
+@keyframes marquee-x {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.marquee { overflow: hidden; }
+.marquee-track {
+  display: flex;
+  width: max-content;
+  /* !important so it keeps running even when the global reduced-motion
+     rule forces animation-duration to ~0 (this row is the page's headline) */
+  animation: marquee-x var(--marquee-dur, 60s) linear infinite !important;
+}
+.marquee:hover .marquee-track { animation-play-state: paused; }
+
+/* ============================================================
+   PSA graded frame — big card + reflective holo border
+   ============================================================ */
+.psa-frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  padding: 5px;
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklch, var(--rar) 65%, white) 0%,
+    var(--rar) 35%,
+    color-mix(in oklch, var(--rar) 45%, black) 70%,
+    color-mix(in oklch, var(--rar) 72%, white) 100%
+  );
+  box-shadow:
+    0 22px 55px -18px rgba(0, 0, 0, 0.85),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+.psa-frame.is-sm {
+  border-radius: 13px;
+  padding: 3px;
+  box-shadow:
+    0 8px 20px -8px rgba(0, 0, 0, 0.7),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+/* rotating light sweep around the border = แววาว */
+.psa-frame::before {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  border-radius: inherit;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(255, 255, 255, 0.85) 38deg,
+    transparent 78deg,
+    transparent 200deg,
+    rgba(255, 255, 255, 0.55) 248deg,
+    transparent 300deg
+  );
+  animation: holo-spin 7s linear infinite;
+  z-index: 0;
+}
+.psa-frame > * {
+  position: relative;
+  z-index: 1;
+}
+/* slow glass sheen drifting across the card face */
+.psa-sheen {
+  background: linear-gradient(
+    115deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.16) 48%,
+    transparent 62%
+  );
+  background-size: 250% 250%;
+  animation: holo-shimmer 6s ease-in-out infinite;
+}
+
+/* ============================================================
+   Home hero — fanned cards. Big, with a soft static rarity glow.
+   Quiet: no sweep, no sparkle, no bob — the card art carries it.
+   ============================================================ */
+.hero-card {
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, var(--rar, var(--color-line)) 28%, transparent),
+    0 22px 50px -22px color-mix(in oklch, var(--rar, black) 50%, transparent);
+}
+
+/* ============================================================
+   Reduced motion — freeze every loop, swap reveals for instant
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .holo--foil::before { animation: none; }
+  .holo--foil::after { animation: none; opacity: 0.6; }
+  .hover-lift:hover { transform: none; }
+}
