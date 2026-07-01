@@ -9,7 +9,9 @@ import { IconBolt, IconClose, IconShield } from "./Icons";
 
 type Phase = "inside" | "ripping" | "result";
 
-const REVEAL_MS = 1600;
+// Fallback only: reveal is normally driven by the pack-opening video's `ended`
+// event. This fires if the video fails to load or `ended` never arrives.
+const RIP_FALLBACK_MS = 12000;
 
 export default function RipModal({
   pack,
@@ -23,6 +25,8 @@ export default function RipModal({
   const [phase, setPhase] = useState<Phase>("inside");
   const [result, setResult] = useState<CardSeed | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const settled = useRef(false);
+  const pending = useRef<CardSeed | null>(null);
 
   // esc to close + lock background scroll
   useEffect(() => {
@@ -38,23 +42,33 @@ export default function RipModal({
 
   useEffect(() => () => clearTimeout(timer.current ?? undefined), []);
 
+  // reveal the pull; guarded so the video's `ended` and the fallback timer
+  // can race without double-firing
+  const finish = () => {
+    if (settled.current) return;
+    settled.current = true;
+    clearTimeout(timer.current ?? undefined);
+    const card = pending.current;
+    if (!card) return;
+    setResult(card);
+    setPhase("result");
+    onPulled?.(toPull(card, pack));
+  };
+
   const rip = () => {
     const card = ripPack(pack);
+    pending.current = card;
+    settled.current = false;
+
     const reduced =
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    const settle = () => {
-      setResult(card);
-      setPhase("result");
-      onPulled?.(toPull(card, pack));
-    };
-
     if (reduced) {
-      settle();
+      finish();
     } else {
       setPhase("ripping");
-      timer.current = setTimeout(settle, REVEAL_MS);
+      timer.current = setTimeout(finish, RIP_FALLBACK_MS);
     }
   };
 
@@ -79,7 +93,7 @@ export default function RipModal({
         </button>
 
         {phase === "inside" && <Inside pack={pack} onRip={rip} />}
-        {phase === "ripping" && <Ripping pack={pack} />}
+        {phase === "ripping" && <Ripping onDone={finish} />}
         {phase === "result" && result && (
           <Result
             card={result}
@@ -200,23 +214,29 @@ function Inside({ pack, onRip }: { pack: Pack; onRip: () => void }) {
 
 /* ---------- ripping suspense ---------- */
 
-function Ripping({ pack }: { pack: Pack }) {
+function Ripping({ onDone }: { onDone: () => void }) {
   return (
-    <div className="grid min-h-[420px] place-items-center p-6">
-      <div className="flex flex-col items-center">
-        <div className="w-40 animate-pulse">
-          <CardArt
-            rarity={pack.topRarity}
-            category={pack.category}
-            label={pack.tier}
-            grade="SEALED"
-            slab={false}
-            className="aspect-[3/4] w-full [animation:holo-shimmer_0.9s_ease-in-out_infinite]"
-          />
-        </div>
-        <p className="mt-5 font-mono text-sm font-semibold uppercase tracking-[0.2em] text-primary">
+    <div className="relative grid place-items-center bg-black">
+      <video
+        src="/pack-opening.mp4"
+        autoPlay
+        muted
+        playsInline
+        preload="auto"
+        onEnded={onDone}
+        onError={onDone}
+        className="aspect-video w-full object-cover"
+      />
+      <div className="pointer-events-none absolute inset-x-0 bottom-4 flex flex-col items-center gap-3">
+        <p className="font-mono text-sm font-semibold uppercase tracking-[0.2em] text-white/90 drop-shadow">
           Ripping…
         </p>
+        <button
+          onClick={onDone}
+          className="pointer-events-auto rounded-full border border-white/30 bg-black/40 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-white/90 backdrop-blur transition-colors hover:bg-black/60"
+        >
+          Skip
+        </button>
       </div>
     </div>
   );
