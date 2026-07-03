@@ -8,6 +8,7 @@ import {
   IconRaffle,
   IconBolt,
   IconSpark,
+  IconShield,
 } from "./Icons";
 import type { AnchorHTMLAttributes, SVGProps } from "react";
 
@@ -40,6 +41,7 @@ export interface NavItem {
 
 export const primaryNav: NavItem[] = [
   { label: "Home", href: "/", icon: IconHome },
+  { label: "My Vault", href: "/vault", icon: IconShield },
   { label: "Packs", href: "/packs", icon: IconPack },
   { label: "Just Pulled", href: "/packs", icon: IconCoin, badge: "LIVE" },
   { label: "Lorcana Market", href: "/market/lorcana", icon: IconStore },
