@@ -6,22 +6,15 @@ import promoEvents from "../data/promo-events.json";
 /** Lorcast promo slug (`${setCode}-${number}`) → real event / set-campaign. */
 const PROMO_EVENTS = promoEvents as Record<string, string>;
 
-/** display order of promo events within the Promos tab (Disney100 first) */
+/** display order of promo event categories within the Promos tab */
 const PROMO_EVENT_ORDER = [
   "Disney100",
-  "The First Chapter",
-  "Rise of the Floodborn",
-  "Into the Inklands",
-  "Ursula's Return",
-  "Shimmering Skies",
-  "Azurite Sea",
-  "Archazia's Island",
-  "Reign of Jafar",
-  "Fabled",
-  "Whispers in the Well",
-  "Winterspell",
-  "Wilds Unknown",
-  "Attack of the Vine!",
+  "Disney Cruise",
+  "D23 Expo",
+  "Parks & Stores",
+  "Organized Play",
+  "Promos",
+  "Challenge",
   "Other promos",
 ];
 
@@ -234,7 +227,7 @@ export interface CollectGroup {
 
 /** event categories, in a sensible reading order (marquee events first) */
 const EVENT_GROUPS: { label: string; blurb: string }[] = [
-  { label: "Promos", blurb: "Set-launch & event promos — Disney100, league, prerelease, gateway & box toppers." },
+  { label: "Promos", blurb: "Grouped by event source — Disney100, Disney Cruise, D23, parks & organized play." },
   { label: "D23 Expo", blurb: "Disney D23 convention exclusives, incl. first-print variants." },
   { label: "EPCOT Festival", blurb: "Disney parks EPCOT Festival of the Arts exclusives." },
   { label: "Lorcana Challenge", blurb: "Tournament prize cards from every Lorcana Challenge season (CP & C2)." },
