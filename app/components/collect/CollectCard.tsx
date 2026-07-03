@@ -14,90 +14,75 @@ const RAR_VAR: Record<string, string> = {
   Rare: "--color-r-rare",
 };
 
-function Block({ label, children }: { label: string; children: string }) {
-  return (
-    <div>
-      <h4 className="text-[0.6rem] font-bold uppercase tracking-[0.14em] text-faint">
-        {label}
-      </h4>
-      <p className="mt-1 text-[0.8rem] leading-relaxed text-muted">{children}</p>
-    </div>
-  );
-}
-
 export default function CollectCard({ c }: { c: Collectible }) {
   const rarVar = RAR_VAR[c.rarityLabel] ?? RARITY_META[c.rarity].varName;
   const detail = c.slug ? `/market/lorcana/${c.slug}` : null;
 
-  return (
+  const body = (
     <article
       style={{ ["--rar" as string]: `var(${rarVar})` }}
-      className="flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-surface transition-all hover:border-[color-mix(in_oklch,var(--rar)_55%,transparent)] hover:shadow-[0_16px_44px_-20px_var(--rar)]"
+      className="hover-lift group flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-surface transition-all hover:border-[color-mix(in_oklch,var(--rar)_55%,transparent)] hover:shadow-[0_16px_44px_-20px_var(--rar)]"
     >
-      <div className="flex gap-4 p-4">
-        <div
-          className="relative aspect-[3/4] w-[112px] shrink-0 overflow-hidden rounded-[11px] border border-line bg-bg/40"
-          style={{ boxShadow: `0 10px 30px -18px var(--rar)` }}
+      {/* art */}
+      <div
+        className="relative aspect-[3/4] overflow-hidden border-b border-line-soft bg-[radial-gradient(120%_90%_at_50%_0%,color-mix(in_oklch,var(--rar)_22%,transparent),transparent_60%)]"
+      >
+        {c.image ? (
+          // eslint-disable-next-line @next/next/no-img-element -- remote card scan
+          <img
+            src={c.image}
+            alt={c.name}
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            className="h-full w-full object-contain p-2 transition-transform duration-300 group-hover:scale-[1.03]"
+          />
+        ) : (
+          <CardArt rarity={c.rarity} category="lorcana" label={c.set ?? ""} className="h-full w-full" />
+        )}
+
+        {/* rarity — top-left, legible chip (never colour alone) */}
+        <span
+          className="absolute left-2 top-2 inline-flex items-center rounded-full border px-2 py-0.5 text-[0.58rem] font-bold uppercase tracking-wide backdrop-blur-sm"
+          style={{
+            background: "color-mix(in oklch, var(--rar) 22%, var(--color-bg))",
+            borderColor: "color-mix(in oklch, var(--rar) 45%, transparent)",
+            color: "color-mix(in oklch, var(--rar) 55%, white)",
+          }}
         >
-          {c.image ? (
-            // eslint-disable-next-line @next/next/no-img-element -- remote card scan
-            <img
-              src={c.image}
-              alt={c.name}
-              loading="lazy"
-              referrerPolicy="no-referrer"
-              className="h-full w-full object-contain"
-            />
-          ) : (
-            <CardArt rarity={c.rarity} category="lorcana" label={c.set ?? ""} className="h-full w-full" />
+          {c.rarityLabel}
+        </span>
+      </div>
+
+      {/* facts — scannable */}
+      <div className="flex flex-1 flex-col gap-1.5 p-3">
+        <h3 className="line-clamp-1 text-[0.92rem] font-bold leading-tight">{c.name}</h3>
+
+        <div className="flex items-center gap-1.5 font-mono text-[0.66rem] text-faint">
+          {c.setCode && <span className="uppercase">{c.setCode}</span>}
+          {c.number && <span>· #{c.number}</span>}
+          {c.set && <span className="truncate normal-case tracking-tight">· {c.set}</span>}
+        </div>
+
+        {/* จุดเด่น — one-line highlight */}
+        <p className="line-clamp-2 text-[0.74rem] leading-snug text-muted">{c.why}</p>
+
+        <div className="mt-auto flex items-center justify-between pt-1.5">
+          <Money usd={c.price} className="font-mono text-base font-bold tracking-tight" />
+          {detail && (
+            <span className="inline-flex items-center gap-0.5 text-[0.72rem] font-semibold text-primary opacity-0 transition-opacity group-hover:opacity-100">
+              Details <span aria-hidden>→</span>
+            </span>
           )}
         </div>
-
-        <div className="flex min-w-0 flex-1 flex-col">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span
-              className="inline-flex items-center rounded-full px-2 py-0.5 text-[0.58rem] font-bold uppercase tracking-wide"
-              style={{ background: `color-mix(in oklch, var(--rar) 16%, transparent)`, color: `var(--rar)` }}
-            >
-              {c.rarityLabel}
-            </span>
-            <span
-              className={`inline-flex items-center rounded-full px-2 py-0.5 text-[0.58rem] font-bold uppercase tracking-wide ${
-                c.origin.kind === "event"
-                  ? "bg-accent/15 text-accent"
-                  : "border border-line text-muted"
-              }`}
-            >
-              {c.origin.kind === "event" ? "★ " : ""}
-              {c.origin.label}
-            </span>
-          </div>
-          <h3 className="mt-1.5 line-clamp-2 text-[1.05rem] font-extrabold leading-tight">
-            {c.name}
-          </h3>
-          {c.set && <span className="truncate text-[0.72rem] text-faint">{c.set}</span>}
-          <div className="mt-auto pt-2">
-            <Money usd={c.price} className="font-mono text-xl font-bold tracking-tight" />
-            <span className="ml-1 text-[0.62rem] text-faint">market price</span>
-          </div>
-        </div>
       </div>
-
-      <div className="space-y-3 border-t border-line-soft px-4 py-4">
-        <Block label="Why collect">{c.why}</Block>
-        <Block label="How to get one">{c.howToGet}</Block>
-        <Block label="In competitive play">{c.play}</Block>
-      </div>
-
-      {detail && (
-        <Link
-          href={detail}
-          className="mt-auto flex items-center justify-between border-t border-line-soft px-4 py-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/5"
-        >
-          View price history &amp; where to buy
-          <span aria-hidden>→</span>
-        </Link>
-      )}
     </article>
+  );
+
+  return detail ? (
+    <Link href={detail} aria-label={`${c.name} — ${c.rarityLabel}, ${c.why}`} className="block h-full">
+      {body}
+    </Link>
+  ) : (
+    body
   );
 }
