@@ -1,6 +1,29 @@
 import type { Listing, Rarity } from "./types";
 import { RARITY_META } from "./types";
 import { isEventSet } from "./lorcast";
+import promoEvents from "../data/promo-events.json";
+
+/** Lorcast promo slug (`${setCode}-${number}`) → real event / set-campaign. */
+const PROMO_EVENTS = promoEvents as Record<string, string>;
+
+/** display order of promo events within the Promos tab (Disney100 first) */
+const PROMO_EVENT_ORDER = [
+  "Disney100",
+  "The First Chapter",
+  "Rise of the Floodborn",
+  "Into the Inklands",
+  "Ursula's Return",
+  "Shimmering Skies",
+  "Azurite Sea",
+  "Archazia's Island",
+  "Reign of Jafar",
+  "Fabled",
+  "Whispers in the Well",
+  "Winterspell",
+  "Wilds Unknown",
+  "Attack of the Vine!",
+  "Other promos",
+];
 
 /**
  * A collectible-spotlight profile — a scarce, desirable card presented with
@@ -60,7 +83,7 @@ function originOf(setCode?: string): Origin {
     case "p1":
     case "p2":
     case "p3":
-      return { label: "Promo Set", kind: "event" };
+      return { label: "Promos", kind: "event" };
     default:
       return { label: "Booster", kind: "box" };
   }
@@ -92,8 +115,8 @@ function howToGet(label: string, origin: Origin, set?: string): string {
       return "A D23 Expo exclusive, released at Disney's convention rather than in retail packs. You'll only find copies on the secondary market.";
     case "EPCOT Festival":
       return "An EPCOT Festival of the Arts exclusive, sold at the Disney parks event — not in any booster product.";
-    case "Promo Set":
-      return "A promo-set card distributed through league kits, prerelease/gateway events and box toppers rather than the main booster line.";
+    case "Promos":
+      return "A promo card tied to a set launch or event (Disney100, league kits, prereleases, gateway & box toppers) rather than the main booster line.";
     default: {
       const from = set ? `sealed ${set} booster packs` : "sealed booster packs";
       const odds =
@@ -211,7 +234,7 @@ export interface CollectGroup {
 
 /** event categories, in a sensible reading order (marquee events first) */
 const EVENT_GROUPS: { label: string; blurb: string }[] = [
-  { label: "Promo Set", blurb: "League, prerelease, Disney Cruise, gateway & box-topper promos." },
+  { label: "Promos", blurb: "Set-launch & event promos — Disney100, league, prerelease, gateway & box toppers." },
   { label: "D23 Expo", blurb: "Disney D23 convention exclusives, incl. first-print variants." },
   { label: "EPCOT Festival", blurb: "Disney parks EPCOT Festival of the Arts exclusives." },
   { label: "Lorcana Challenge", blurb: "Tournament prize cards from every Lorcana Challenge season (CP & C2)." },
@@ -220,26 +243,48 @@ const EVENT_GROUPS: { label: string; blurb: string }[] = [
 const groupKey = (label: string) => label.toLowerCase().replace(/\s+/g, "-");
 
 /**
- * Split a category's cards into per-set subgroups (labelled by set name),
- * priced-first within each. Returns undefined when the cards all share one set
- * — nothing to divide.
+ * Which named sub-section a card belongs to inside its category. Promos split
+ * by the real event / set-campaign (from the promo-events map); the Challenge
+ * tab splits by season (CP vs C2); everything else by set name.
+ */
+function subInfo(c: Collectible): { key: string; label: string; order: number } {
+  const code = (c.setCode ?? "").toUpperCase();
+  if (code === "P1" || code === "P2" || code === "P3") {
+    const ev = c.slug ? PROMO_EVENTS[c.slug] : undefined;
+    // unmapped promos (Lorcast/​lorcanajson numbering drift) → one tidy bucket
+    const label = ev ?? "Other promos";
+    const o = PROMO_EVENT_ORDER.indexOf(label);
+    return { key: groupKey(label), label, order: o < 0 ? 95 : o };
+  }
+  if (code === "CP") return { key: "cp", label: c.set ?? "Challenge Promo", order: 0 };
+  if (code === "C2") return { key: "c2", label: c.set ?? "Lorcana Challenge Year 3", order: 1 };
+  const label = c.set ?? code ?? "Other";
+  return { key: groupKey(label), label, order: 0 };
+}
+
+/**
+ * Split a category's cards into named subgroups, priced-first within each and
+ * ordered by subInfo. Returns undefined when everything shares one subgroup —
+ * nothing to divide.
  */
 function buildSubgroups(cards: Collectible[]): CollectSubgroup[] | undefined {
-  const bySet = new Map<string, { label: string; cards: Collectible[] }>();
+  const by = new Map<string, { label: string; order: number; cards: Collectible[] }>();
   for (const c of cards) {
-    const code = c.setCode ?? "other";
-    const entry = bySet.get(code) ?? { label: c.set ?? code, cards: [] };
+    const { key, label, order } = subInfo(c);
+    const entry = by.get(key) ?? { label, order, cards: [] };
     entry.cards.push(c);
-    bySet.set(code, entry);
+    by.set(key, entry);
   }
-  if (bySet.size < 2) return undefined;
-  return [...bySet.entries()]
-    .map(([code, { label, cards }]) => ({
-      key: groupKey(code),
+  if (by.size < 2) return undefined;
+  return [...by.entries()]
+    .map(([key, { label, order, cards }]) => ({
+      key,
       label,
+      order,
       cards: cards.slice().sort((a, b) => b.price - a.price),
     }))
-    .sort((a, b) => a.label.localeCompare(b.label));
+    .sort((a, b) => a.order - b.order || a.label.localeCompare(b.label))
+    .map(({ key, label, cards }) => ({ key, label, cards }));
 }
 
 /**
