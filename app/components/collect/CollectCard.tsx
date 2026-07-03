@@ -67,7 +67,11 @@ export default function CollectCard({ c }: { c: Collectible }) {
         <p className="line-clamp-2 text-[0.74rem] leading-snug text-muted">{c.why}</p>
 
         <div className="mt-auto flex items-center justify-between pt-1.5">
-          <Money usd={c.price} className="font-mono text-base font-bold tracking-tight" />
+          {c.price > 0 ? (
+            <Money usd={c.price} className="font-mono text-base font-bold tracking-tight" />
+          ) : (
+            <span className="font-mono text-[0.72rem] font-semibold text-faint">Not yet priced</span>
+          )}
           {detail && (
             <span className="inline-flex items-center gap-0.5 text-[0.72rem] font-semibold text-primary opacity-0 transition-opacity group-hover:opacity-100">
               Details <span aria-hidden>→</span>

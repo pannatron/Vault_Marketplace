@@ -147,17 +147,19 @@ function toCollectible(l: Listing): Collectible {
 function pick(
   listings: Listing[],
   keep: (l: Listing) => boolean,
-  limit: number
+  limit: number,
+  allowUnpriced = false
 ): Collectible[] {
   const seen = new Set<string>();
   return listings
-    .filter((l) => l.price > 0 && keep(l))
+    .filter((l) => (allowUnpriced || l.price > 0) && keep(l))
     .filter((l) => {
       const key = l.slug ?? l.title;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
     })
+    // priced first (desc); unpriced exclusives fall to the end
     .sort((a, b) => b.price - a.price)
     .slice(0, limit)
     .map(toCollectible);
@@ -180,7 +182,7 @@ export function getCollectibles(listings: Listing[], limit = 12): Collectible[] 
  * promo sets — the ones you can't get from a box at all.
  */
 export function getEventCards(listings: Listing[], limit = 12): Collectible[] {
-  return pick(listings, (l) => isEventSet(l.setCode), limit);
+  return pick(listings, (l) => isEventSet(l.setCode), limit, true);
 }
 
 /* ------------------------------------------------------------------ *
@@ -198,51 +200,34 @@ export interface CollectGroup {
   cards: Collectible[];
 }
 
-/** box rarities, chase-first */
-const BOX_GROUPS: { label: string; blurb: string }[] = [
-  { label: "Enchanted", blurb: "Borderless full-art — the trophy pull of each set." },
-  { label: "Iconic", blurb: "The newest ultra-rare tier, extremely limited." },
-  { label: "Legendary", blurb: "Top standard rarity — marquee characters." },
-  { label: "Super Rare", blurb: "Scarce but attainable, a rung below the chase." },
-  { label: "Epic", blurb: "High-rarity cards a step below the alt-arts." },
-];
-
-/** event categories, in a sensible reading order */
+/** event categories, in a sensible reading order (marquee events first) */
 const EVENT_GROUPS: { label: string; blurb: string }[] = [
+  { label: "Promo Set", blurb: "League, prerelease, Disney Cruise, gateway & box-topper promos." },
+  { label: "D23 Expo", blurb: "Disney D23 convention exclusives, incl. first-print variants." },
+  { label: "EPCOT Festival", blurb: "Disney parks EPCOT Festival of the Arts exclusives." },
   { label: "Challenge Promo", blurb: "Store & Set Championship prize cards." },
   { label: "Lorcana Challenge", blurb: "Awarded at official Challenge tournaments." },
-  { label: "D23 Expo", blurb: "Disney D23 convention exclusives." },
-  { label: "EPCOT Festival", blurb: "Disney parks EPCOT event exclusives." },
-  { label: "Promo Set", blurb: "League kits, prereleases & box toppers." },
 ];
 
 const groupKey = (label: string) => label.toLowerCase().replace(/\s+/g, "-");
 
 /**
- * Build the categorised sections for the collect page. Each card lands in
- * exactly one group; empty groups are dropped. Per-group cap keeps any one
- * category from dominating.
+ * Build the categorised sections for the collect page — event / promo /
+ * organized-play exclusives only (booster-box chase cards are intentionally
+ * excluded; those live in the market). Each card lands in exactly one group;
+ * empty groups are dropped.
  */
 export function getCollectSections(
   listings: Listing[],
-  perGroup = 8
+  perGroup = 200
 ): CollectGroup[] {
-  const box = getCollectibles(listings, 500);
-  const events = getEventCards(listings, 500);
+  const events = getEventCards(listings, 1000);
 
   const groups: CollectGroup[] = [];
-
-  // event / promo categories lead — they're the hardest to find
   for (const g of EVENT_GROUPS) {
     const cards = events.filter((c) => c.origin.label === g.label).slice(0, perGroup);
     if (cards.length) {
       groups.push({ key: groupKey(g.label), label: g.label, kind: "event", blurb: g.blurb, cards });
-    }
-  }
-  for (const g of BOX_GROUPS) {
-    const cards = box.filter((c) => c.rarityLabel === g.label).slice(0, perGroup);
-    if (cards.length) {
-      groups.push({ key: groupKey(g.label), label: g.label, kind: "box", blurb: g.blurb, cards });
     }
   }
   return groups;

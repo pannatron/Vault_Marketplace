@@ -8,9 +8,9 @@ import { LiveBadge } from "../components/Section";
 import { IconChevronL } from "../components/Icons";
 
 export const metadata: Metadata = {
-  title: "Collector's Spotlight — cards worth collecting | Card Mania",
+  title: "Event & Promo Exclusives — Lorcana | Card Mania",
   description:
-    "The chase cards of Disney Lorcana, sorted by rarity and by the event they came from — what each one is, how you get a copy, and how it maps to competitive play, with live market prices. Information only, not investment advice.",
+    "Disney Lorcana cards you can't pull from a box — promo sets, Disney Cruise, D23, EPCOT, championship and tournament exclusives, grouped by event with live market prices. Information only, not investment advice.",
 };
 
 export const revalidate = 300;
@@ -34,15 +34,15 @@ export default async function CollectPage() {
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <span aria-hidden className="text-2xl">🏆</span>
             <h1 className="text-[clamp(1.8rem,4.5vw,2.6rem)] font-extrabold leading-none tracking-tight">
-              Collector&apos;s Spotlight
+              Event &amp; Promo Exclusives
             </h1>
             <LiveBadge />
           </div>
           <p className="mt-3 max-w-2xl text-base leading-relaxed text-muted">
-            The chase cards of Disney Lorcana, split by where they come from —
-            booster-box rarities and the event exclusives you can&apos;t pull from a
-            pack. For each: what makes it special, how a copy actually reaches you,
-            and how it maps to competitive play.
+            The Disney Lorcana cards you can&apos;t pull from a booster box — promo
+            sets, Disney Cruise, D23, EPCOT, championship and tournament exclusives.
+            Grouped by the event they came from, with rarity, a quick highlight and
+            market price for each.
           </p>
           <p className="mt-2 text-[0.78rem] text-faint">
             Information only · not investment advice. Prices are live eBay /
