@@ -159,8 +159,13 @@ function slugOf(c: LorcastCard): string {
 function toListing(c: LorcastCard): Listing | null {
   const usd = c.prices?.usd ?? null;
   const foil = c.prices?.usd_foil ?? null;
-  const price = usd ?? foil;
-  if (!price || price <= 0) return null;
+  const priced = usd ?? foil ?? 0;
+  const event = isEventSet(c.set?.code);
+  // priced cards always qualify; event/exclusive cards are kept even without a
+  // market price (many convention/cruise/promo cards have no TCGplayer price
+  // yet) so the collector view isn't missing them — price shows as unpriced.
+  if (priced <= 0 && !event) return null;
+  const price = priced;
 
   const isFoilOnly = usd == null && foil != null;
   const img = c.image_uris?.digital?.normal || c.image_uris?.digital?.large;
@@ -215,8 +220,12 @@ export async function getLorcastListings(): Promise<Listing[]> {
     "rarity:Legendary",
     "rarity:Iconic",
     "rarity:Epic",
-    "rarity:Promo",
-    // event / organized-play / convention exclusives (not box-pullable)
+    // event / organized-play / convention exclusives (not box-pullable).
+    // Queried by set, not rarity — Lorcast's `rarity:Promo` returns nothing,
+    // so the promo sets must be pulled explicitly.
+    "set:P1",
+    "set:P2",
+    "set:P3",
     "set:cp",
     "set:C2",
     "set:D23",
