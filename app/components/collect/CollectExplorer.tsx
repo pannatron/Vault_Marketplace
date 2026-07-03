@@ -84,13 +84,35 @@ export default function CollectExplorer({ sections }: { sections: CollectGroup[]
           <p className="w-full text-sm text-muted sm:w-auto">{current.blurb}</p>
         </div>
 
-        <div
-          key={current.key}
-          className="animate-rise-in grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(200px,1fr))]"
-        >
-          {current.cards.map((c) => (
-            <CollectCard key={c.id} c={c} />
-          ))}
+        <div key={current.key} className="animate-rise-in">
+          {current.subgroups ? (
+            <div className="space-y-8">
+              {current.subgroups.map((sub) => (
+                <div key={sub.key}>
+                  <div className="mb-3 flex items-center gap-3">
+                    <h3 className="text-sm font-bold uppercase tracking-wide text-muted">
+                      {sub.label}
+                    </h3>
+                    <span className="font-mono text-[0.72rem] tabular-nums text-faint">
+                      {sub.cards.length}
+                    </span>
+                    <span className="h-px flex-1 bg-line-soft" />
+                  </div>
+                  <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(200px,1fr))]">
+                    {sub.cards.map((c) => (
+                      <CollectCard key={c.id} c={c} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(200px,1fr))]">
+              {current.cards.map((c) => (
+                <CollectCard key={c.id} c={c} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
     </>

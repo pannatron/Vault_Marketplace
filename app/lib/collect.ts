@@ -190,6 +190,13 @@ export function getEventCards(listings: Listing[], limit = 12): Collectible[] {
  * flat pile: box cards by rarity, event cards by the event they came from.
  * ------------------------------------------------------------------ */
 
+export interface CollectSubgroup {
+  key: string;
+  /** set display name, e.g. "Promo Set 2" */
+  label: string;
+  cards: Collectible[];
+}
+
 export interface CollectGroup {
   /** stable key for filtering */
   key: string;
@@ -198,6 +205,8 @@ export interface CollectGroup {
   /** one-line description of the category */
   blurb: string;
   cards: Collectible[];
+  /** when a category spans several sets, split it with a header per set */
+  subgroups?: CollectSubgroup[];
 }
 
 /** event categories, in a sensible reading order (marquee events first) */
@@ -209,6 +218,29 @@ const EVENT_GROUPS: { label: string; blurb: string }[] = [
 ];
 
 const groupKey = (label: string) => label.toLowerCase().replace(/\s+/g, "-");
+
+/**
+ * Split a category's cards into per-set subgroups (labelled by set name),
+ * priced-first within each. Returns undefined when the cards all share one set
+ * — nothing to divide.
+ */
+function buildSubgroups(cards: Collectible[]): CollectSubgroup[] | undefined {
+  const bySet = new Map<string, { label: string; cards: Collectible[] }>();
+  for (const c of cards) {
+    const code = c.setCode ?? "other";
+    const entry = bySet.get(code) ?? { label: c.set ?? code, cards: [] };
+    entry.cards.push(c);
+    bySet.set(code, entry);
+  }
+  if (bySet.size < 2) return undefined;
+  return [...bySet.entries()]
+    .map(([code, { label, cards }]) => ({
+      key: groupKey(code),
+      label,
+      cards: cards.slice().sort((a, b) => b.price - a.price),
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+}
 
 /**
  * Build the categorised sections for the collect page — event / promo /
@@ -226,7 +258,14 @@ export function getCollectSections(
   for (const g of EVENT_GROUPS) {
     const cards = events.filter((c) => c.origin.label === g.label).slice(0, perGroup);
     if (cards.length) {
-      groups.push({ key: groupKey(g.label), label: g.label, kind: "event", blurb: g.blurb, cards });
+      groups.push({
+        key: groupKey(g.label),
+        label: g.label,
+        kind: "event",
+        blurb: g.blurb,
+        cards,
+        subgroups: buildSubgroups(cards),
+      });
     }
   }
   return groups;
