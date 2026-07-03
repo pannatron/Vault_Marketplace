@@ -23,6 +23,10 @@ export interface Collectible {
   image?: string;
   price: number;
   url: string;
+  /** set code (e.g. "P2", "D23") */
+  setCode?: string;
+  /** collector number within the set */
+  number?: string;
   /** where the card comes from — booster box vs a specific event */
   origin: Origin;
   /** why this one is worth collecting */
@@ -131,6 +135,8 @@ function toCollectible(l: Listing): Collectible {
     image: l.image,
     price: l.price,
     url: l.url,
+    setCode: l.setCode,
+    number: l.slug ? l.slug.slice(l.slug.lastIndexOf("-") + 1) : undefined,
     origin,
     why: why(label, origin),
     howToGet: howToGet(label, origin, l.set),
@@ -226,16 +232,17 @@ export function getCollectSections(
 
   const groups: CollectGroup[] = [];
 
-  for (const g of BOX_GROUPS) {
-    const cards = box.filter((c) => c.rarityLabel === g.label).slice(0, perGroup);
-    if (cards.length) {
-      groups.push({ key: groupKey(g.label), label: g.label, kind: "box", blurb: g.blurb, cards });
-    }
-  }
+  // event / promo categories lead — they're the hardest to find
   for (const g of EVENT_GROUPS) {
     const cards = events.filter((c) => c.origin.label === g.label).slice(0, perGroup);
     if (cards.length) {
       groups.push({ key: groupKey(g.label), label: g.label, kind: "event", blurb: g.blurb, cards });
+    }
+  }
+  for (const g of BOX_GROUPS) {
+    const cards = box.filter((c) => c.rarityLabel === g.label).slice(0, perGroup);
+    if (cards.length) {
+      groups.push({ key: groupKey(g.label), label: g.label, kind: "box", blurb: g.blurb, cards });
     }
   }
   return groups;
