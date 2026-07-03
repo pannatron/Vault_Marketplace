@@ -47,8 +47,10 @@ export interface Origin {
 /** classify how a card is obtained from its set code */
 function originOf(setCode?: string): Origin {
   switch (setCode?.toLowerCase()) {
+    // cp (2024) and C2 ("Year 3", 2026) are the same organized-play series —
+    // Lorcast just names them differently. Merge under one label; the per-card
+    // set code (CP / C2) shows which season.
     case "cp":
-      return { label: "Challenge Promo", kind: "event" };
     case "c2":
       return { label: "Lorcana Challenge", kind: "event" };
     case "d23":
@@ -84,10 +86,8 @@ function why(label: string, origin: Origin): string {
 
 function howToGet(label: string, origin: Origin, set?: string): string {
   switch (origin.label) {
-    case "Challenge Promo":
-      return "A Store/Set Championship prize card — handed out at organized-play events, never sold in packs. Copies reach collectors only through the secondary market.";
     case "Lorcana Challenge":
-      return "Awarded to competitors at official Lorcana Challenge tournaments. Not part of any booster product — secondary market only.";
+      return "A Lorcana Challenge prize card — handed to competitors at official organized-play tournaments (a different set each season). Never sold in packs; copies reach collectors only through the secondary market.";
     case "D23 Expo":
       return "A D23 Expo exclusive, released at Disney's convention rather than in retail packs. You'll only find copies on the secondary market.";
     case "EPCOT Festival":
@@ -106,7 +106,7 @@ function howToGet(label: string, origin: Origin, set?: string): string {
 }
 
 function play(label: string, origin: Origin): string {
-  if (origin.label === "Challenge Promo" || origin.label === "Lorcana Challenge") {
+  if (origin.label === "Lorcana Challenge") {
     return "An organized-play card — it exists because of competitive Lorcana, and the printed version is tournament-legal alongside its base card.";
   }
   if (origin.kind === "event") {
@@ -205,8 +205,7 @@ const EVENT_GROUPS: { label: string; blurb: string }[] = [
   { label: "Promo Set", blurb: "League, prerelease, Disney Cruise, gateway & box-topper promos." },
   { label: "D23 Expo", blurb: "Disney D23 convention exclusives, incl. first-print variants." },
   { label: "EPCOT Festival", blurb: "Disney parks EPCOT Festival of the Arts exclusives." },
-  { label: "Challenge Promo", blurb: "Store & Set Championship prize cards." },
-  { label: "Lorcana Challenge", blurb: "Awarded at official Challenge tournaments." },
+  { label: "Lorcana Challenge", blurb: "Tournament prize cards from every Lorcana Challenge season (CP & C2)." },
 ];
 
 const groupKey = (label: string) => label.toLowerCase().replace(/\s+/g, "-");
