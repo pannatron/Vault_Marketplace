@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { chaseOdds, packOdds, packPreview, ripPack, toPull } from "../lib/rip";
+import { addToVault } from "../lib/vault";
 import { RARITY_META, type CardSeed, type Pack, type Pull } from "../lib/types";
 import CardArt from "./CardArt";
 import Money from "./Money";
@@ -99,7 +100,10 @@ export default function RipModal({
               setResult(null);
               setPhase("inside");
             }}
-            onClose={onClose}
+            onKeep={() => {
+              addToVault(toPull(result, pack));
+              onClose();
+            }}
           />
         )}
       </div>
@@ -279,12 +283,12 @@ function Result({
   card,
   pack,
   onAgain,
-  onClose,
+  onKeep,
 }: {
   card: CardSeed;
   pack: Pack;
   onAgain: () => void;
-  onClose: () => void;
+  onKeep: () => void;
 }) {
   const meta = RARITY_META[card.rarity];
   const hit = meta.tier >= 3; // rare+
@@ -322,10 +326,11 @@ function Result({
           Rip again
         </button>
         <button
-          onClick={onClose}
-          className="inline-flex h-11 flex-1 items-center justify-center rounded-xl border border-line bg-transparent text-sm font-bold text-ink transition-colors hover:border-line-soft"
+          onClick={onKeep}
+          className="inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-xl border border-line bg-transparent text-sm font-bold text-ink transition-colors hover:border-primary/50"
         >
-          Keep it
+          <IconShield width={15} height={15} />
+          Keep in vault
         </button>
       </div>
     </div>
